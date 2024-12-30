@@ -1,3 +1,5 @@
+const PC_START: u16 = 0x3000;
+
 #[allow(dead_code)]
 enum Registers {
 	R0 = 0,
@@ -41,7 +43,21 @@ enum ConditionFlags {
 }
 
 fn main() {
-	let _memory:[u16; 1 << 16];
-	let _registers:[u16; Registers::COUNT as usize];
+	let _memory:[u16; 1 << 16] = [0; 1 << 16];
+	let mut registers:[u16; Registers::COUNT as usize] = [0; Registers::COUNT as usize];
 	
+	registers[Registers::COND as usize] = ConditionFlags::ZERO as u16;
+	registers[Registers::PC as usize] = PC_START;
+
+	// set running state
+	let mut running:bool = true;
+	while running {
+		let index: u16 = registers[Registers::PC as usize];
+		let mut instr:u16 = _memory[index as usize];
+		registers[Registers::PC as usize] += 1;
+		match instr >> 12 {
+		  op if op == Opcodes::ADD as u16 => todo!(),
+			_ => todo!(),
+		}
+	}
 }
