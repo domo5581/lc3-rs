@@ -15,11 +15,11 @@ impl Memory {
 		}  
 	}
 	pub fn set(&mut self, addr: u16, value: u16) {
-		self.data[addr as usize] = value;
+		self.data[addr as usize] = value
 	}
 
-	pub fn get(&mut self, addr: u16) {
-		self.data[addr as usize];
+	pub fn get(&mut self, addr: u16) -> u16 {
+		self.data[addr as usize]
 	}
 
 	pub fn read(&mut self, path: String) {

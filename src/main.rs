@@ -109,15 +109,10 @@ impl Registers {
 	}
 }
 
-enum State {
-  Stopped = 0,
-	Running,
-}
 
 struct VM {
 	memory: Memory,
 	registers: Registers,
-	state: State,
 }
 
 impl VM {
@@ -125,7 +120,32 @@ impl VM {
 		VM{
 		memory: Memory::new(),
 		registers: Registers::new(),
-		state: State::Stopped,
+		}
+	}
+
+	fn execute(&mut self) {
+		while self.registers.pc < 0x3010 {
+			let instruction = self.memory.get(self.registers.pc);
+			match instruction >> 12 {
+				0 => println!("opcode BR at address {:#x}", self.registers.pc),
+				1 => println!("opcode ADD at address {:#x}", self.registers.pc),
+				2 => println!("opcode LD at address {:#x}", self.registers.pc),
+				3 => println!("opcode ST at address {:#x}", self.registers.pc), 
+				4 => println!("opcode JSR/JSRR at address {:#x}", self.registers.pc),
+				5 => println!("opcode AND at address {:#x}", self.registers.pc),
+				6 => println!("opcode LDR at address {:#x}", self.registers.pc),
+				7 => println!("opcode STR at address {:#x}", self.registers.pc),
+				8 => println!("opcode RTI at address {:#x}", self.registers.pc),
+				9 => println!("opcode NOT at address {:#x}", self.registers.pc),
+				10 => println!("opcode LDI at address {:#x}", self.registers.pc),
+				11 => println!("opcode STI at address {:#x}", self.registers.pc), 
+				12 => println!("opcode RET at address {:#x}", self.registers.pc),  
+				13 => println!("reserved opcode at address {:#x}", self.registers.pc), 
+				14 => println!("opcode LEA at address {:#x}", self.registers.pc), 
+				15 => println!("opcode TRAP at address {:#x}", self.registers.pc), 
+				_ => println!("this is a no op at address {:#x}", self.registers.pc), 
+			}
+			self.registers.pc += 1;
 		}
 	}
 }
@@ -137,7 +157,5 @@ fn main() {
 	let args: Vec<String> = env::args().collect();
 	let path = args.get(1).expect("a file must be specified");
 	lc3.memory.read(path.to_string());
-	for addr in 0x3000..0x3007 {
-		println!("the instruction is {:#b} at address {:#x}", lc3.memory.data[addr], addr);
-	}
+	lc3.execute();
 }
