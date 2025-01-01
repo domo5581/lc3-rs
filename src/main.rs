@@ -1,10 +1,14 @@
+#![allow(dead_code)]
+
 mod mem;
 use core::panic;
-use std::env;
-use std::fs;
-use std::io;
-use std::io::Read;
+// use std::env;
+// use std::fs;
+// use std::io;
+// use std::io::Read;
 use std::u16;
+
+use mem::Memory;
 
 struct Registers {
 	r0: u16,
@@ -17,6 +21,13 @@ struct Registers {
 	r7: u16,
 	pc: u16,
 	cond: u16,
+}
+
+enum ConditionFlags {
+	// condition flags can only be set as nzp with a 1 in each position
+	POS = 1 << 0,
+	ZERO = 1 << 1,
+	NEG = 1 << 2,
 }
 
 impl Registers {
@@ -48,6 +59,8 @@ impl Registers {
 			5 => &mut self.r5,
 			6 => &mut self.r6,
 			7 => &mut self.r7,
+			8 => &mut self.pc,
+			9 => &mut self.cond,
 			_ => panic!("not a register!"),
 		}
 	}
@@ -59,9 +72,43 @@ impl Registers {
 	fn set_registers(&mut self, num : u16, value: u16) {
 		*self.return_register(num) = value;
 	}
+
+	fn update_cond(&mut self, num : u16) {
+		if *self.return_register(num) > 0 {
+			self.cond = ConditionFlags::POS as u16;
+		} else if *self.return_register(num) == 0 {
+			self.cond = ConditionFlags::ZERO as u16;
+		}	else {
+		  self.cond = ConditionFlags::NEG as u16
+		}
+	}
+	
+	fn update_reg_and_cond(&mut self, num : u16, value: u16) {
+		self.set_registers(num, value);
+		self.update_cond(num);
+	}
 }
 
+enum State {
+  Stopped = 0,
+	Running,
+}
 
+struct VM {
+	memory: Memory,
+	registers: Registers,
+	state: State,
+}
+
+impl VM {
+	fn new() -> VM {
+		VM{
+		memory: Memory::new(),
+		registers: Registers::new(),
+		state: State::Stopped,
+		}
+	}
+}
 
 
 
