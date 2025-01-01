@@ -6,7 +6,7 @@ use core::panic;
 // use std::fs;
 // use std::io;
 // use std::io::Read;
-use std::u16;
+use std::{env, u16};
 use mem::Memory;
 
 const PC_START: u16 = 0x300;
@@ -133,28 +133,11 @@ impl VM {
 
 
 fn main() {
-
-
-
-
-
-
-
-
-
-
-	// let args: Vec<String> = env::args().collect();
-	// let	path = args.get(1).expect("enter a file please!");
-	// let file = fs::File::open(path).expect("couldnt open file");
-	// let mut reader = io::BufReader::new(file);
-	// let mut values = Vec::new();
-	// let mut buffer:[u8;2] = [0;2];
-	// while reader.read_exact(&mut buffer).is_ok() {
-	// 	let instruction = u16::from_be_bytes(buffer);
-	// 	values.push(instruction);
-	// }
-	// println!("data: {:?}\n", values);
-	// for data in values{
-	// 	println!("hex data: {:#06X}", data);
-	// }
+	let mut lc3 = VM::new();
+	let args: Vec<String> = env::args().collect();
+	let path = args.get(1).expect("a file must be specified");
+	lc3.memory.read(path.to_string());
+	for addr in 0x3000..0x3007 {
+		println!("the instruction is {:#b} at address {:#x}", lc3.memory.data[addr], addr);
+	}
 }
