@@ -7,8 +7,28 @@ use core::panic;
 // use std::io;
 // use std::io::Read;
 use std::u16;
-
 use mem::Memory;
+
+const PC_START: u16 = 0x300;
+
+enum Opcodes {
+    BR = 0,
+    ADD,
+    LD,
+    ST,
+    JSR,
+    AND,
+    LDR,
+    STR,
+    RTI,
+    NOT,
+    LDI,
+    STI,
+    JMP,
+    RES,
+    LEA,
+    TRAP,
+}
 
 struct Registers {
 	r0: u16,
@@ -41,7 +61,7 @@ impl Registers {
 			r5: 0,
 			r6: 0,
 			r7: 0,
-			pc: 0x300,
+			pc: PC_START,
 			cond: 0,
 		}
   }
