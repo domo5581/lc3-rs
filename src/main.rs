@@ -1,9 +1,11 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+
 mod vm;
+use crate::vm::vm::*;
 
 fn main() {
-	let lc3 = vm::VM::new();
+	let lc3 = VM::new();
 	// let mut lc3 = VM::new();
 	// let args: Vec<String> = env::args().collect();
 	// let path = args.get(1).expect("a file must be specified");

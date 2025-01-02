@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::vm::VM;
+use crate::vm::vm::VM;
 
 enum Opcode {
   BR = 0,

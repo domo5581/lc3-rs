@@ -1,21 +1,21 @@
 #![allow(dead_code)]
 #![allow(unused)]
 
-use crate::virtmem::Memory;
+use crate::vm::mem::*;
 
 const PC_START: u16 = 0x300;
 
-pub struct Registers {
-	pub r0: u16,
-	pub r1: u16,
-	pub r2: u16,
-	pub r3: u16,
-	pub r4: u16,
-	pub r5: u16,
-	pub r6: u16,
-	pub r7: u16,
-	pub pc: u16,
-	pub cond: u16,
+struct Registers {
+	r0: u16,
+	r1: u16,
+	r2: u16,
+	r3: u16,
+	r4: u16,
+	r5: u16,
+	r6: u16,
+	r7: u16,
+	pc: u16,
+	cond: u16,
 }
 
 enum ConditionFlags {
@@ -86,12 +86,12 @@ impl Registers {
 
 
 pub struct VM {
-	pub memory: Memory,
-	pub registers: Registers,
+	 memory: Memory,
+	 registers: Registers,
 }
 
 impl VM {
-	pub fn new() -> VM {
+	 pub fn new() -> VM {
 		VM{
 			memory: Memory::new(),
 			registers: Registers::new(),
@@ -99,7 +99,7 @@ impl VM {
 	}
 }
 
-// 	pub fn execute(&mut self) {
+// 	 fn execute(&mut self) {
 // 		while self.registers.pc < 0x3010 {
 // 			let instruction = self.memory.get(self.registers.pc);
 // 			match instruction >> 12 {
