@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::{fs, io::{self, Read}};
 
 pub const MEM_SIZE: usize = u16::MAX as usize;
