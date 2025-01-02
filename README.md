@@ -1,1 +1,1 @@
-# lc3 vm in rust
+# little computer 3 (lc3) vm in rust
