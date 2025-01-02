@@ -1,7 +1,6 @@
 #![allow(dead_code)]
-
+#![allow(unused_variables)]
 mod vm;
-use mem;
 
 fn main() {
 	let lc3 = vm::VM::new();

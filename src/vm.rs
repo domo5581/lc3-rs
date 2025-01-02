@@ -1,6 +1,7 @@
-#[allow(dead_code)]
+#![allow(dead_code)]
+#![allow(unused)]
 
-use crate::mem::Memory;
+use crate::virtmem::Memory;
 
 const PC_START: u16 = 0x300;
 
