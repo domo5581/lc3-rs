@@ -67,6 +67,28 @@ pub fn execute_opcode(vm: &mut VM) {
   }
 }
 
+fn sext(val: u16, bits: u8) -> u16 {
+  if (val >> (bits - 1)) & 1 == 1 {
+    val | (0xffff << bits)
+  } else {
+    val
+  }
+}
+
 fn noop(instr: u16, vm: &mut VM) {}
+
+fn add(instr: u16, vm: &mut VM) {
+  let dr = (instr >> 9) & 0b111;
+  let sr1 = (instr >> 6) & 0b111;
+  if (instr >> 5 & 1) == 0 {
+    let sr2 = instr & 0b111;
+    let res = vm.registers.get_register(sr1).wrapping_add(vm.registers.get_register(sr2));
+    vm.registers.update_reg_and_cond(dr, res);
+  } else {
+    let imm5 = instr & 0b11111;
+    let res = vm.registers.get_register(sr1).wrapping_add(sext(imm5, 5));
+    vm.registers.update_reg_and_cond(dr, res);
+  }
+}
 
 

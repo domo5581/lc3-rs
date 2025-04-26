@@ -5,7 +5,7 @@ use crate::vm::mem::*;
 
 const PC_START: u16 = 0x300;
 
-struct Registers {
+pub struct Registers {
 	r0: u16,
 	r1: u16,
 	r2: u16,
@@ -14,7 +14,7 @@ struct Registers {
 	r5: u16,
 	r6: u16,
 	r7: u16,
-	pc: u16,
+	pub pc: u16,
 	cond: u16,
 }
 
@@ -44,7 +44,7 @@ impl Registers {
 	// s/o dogeystamp for this cool register return logic
 	// most other vms just updated it with a &mut self
 
-	fn return_register(&mut self, num: u16) -> &mut u16 {
+	pub fn return_register(&mut self, num: u16) -> &mut u16 {
 		match num {
 			0 => &mut self.r0,
 			1 => &mut self.r1,
@@ -60,15 +60,15 @@ impl Registers {
 		}
 	}
 	
-	fn get_register(&mut self, num: u16) -> u16 {
+	pub fn get_register(&mut self, num: u16) -> u16 {
 		*self.return_register(num)
 	}
 
-	fn set_registers(&mut self, num : u16, value: u16) {
+	pub fn set_registers(&mut self, num : u16, value: u16) {
 		*self.return_register(num) = value;
 	}
 
-	fn update_cond(&mut self, num : u16) {
+	pub fn update_cond(&mut self, num : u16) {
 		if *self.return_register(num) > 0 {
 			self.cond = ConditionFlags::POS as u16;
 		} else if *self.return_register(num) == 0 {
@@ -78,7 +78,7 @@ impl Registers {
 		}
 	}
 	
-	fn update_reg_and_cond(&mut self, num : u16, value: u16) {
+	pub fn update_reg_and_cond(&mut self, num : u16, value: u16) {
 		self.set_registers(num, value);
 		self.update_cond(num);
 	}
@@ -86,8 +86,8 @@ impl Registers {
 
 
 pub struct VM {
-	 memory: Memory,
-	 registers: Registers,
+	 pub memory: Memory,
+	 pub registers: Registers,
 }
 
 impl VM {
@@ -98,15 +98,4 @@ impl VM {
 		}
 	}
 }
-
-// 	 fn execute(&mut self) {
-// 		while self.registers.pc < 0x3010 {
-// 			let instruction = self.memory.get(self.registers.pc);
-// 			match instruction >> 12 {
-// 				_ => todo!(),
-// 			}
-// 			self.registers.pc += 1;
-// 		}
-// 	}
-// }
 
