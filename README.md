@@ -1,1 +1,1 @@
-# little computer 3 (lc3) vm written in rust
+# little computer 3 (lc3) vm/disassembler written in rust
