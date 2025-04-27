@@ -49,11 +49,11 @@ pub fn execute_opcode(vm: &mut VM) {
 	let instr = vm.memory.get(vm.registers.pc);
 	let opcode = get_opcode(instr);
 	match opcode {
-    Opcode::ADD => noop(instr, vm),
-    Opcode::AND => noop(instr, vm),
+    Opcode::ADD => add(instr, vm),
+    Opcode::AND => and(instr, vm),
     Opcode::NOT => noop(instr, vm),
-    Opcode::BR => noop(instr, vm),
-    Opcode::JMP => noop(instr, vm),
+    Opcode::BR => br(instr, vm),
+    Opcode::JMP => jmp(instr, vm),
   	Opcode::JSR => noop(instr, vm),
     Opcode::LD => noop(instr, vm),
     Opcode::LDI => noop(instr, vm),
@@ -68,6 +68,7 @@ pub fn execute_opcode(vm: &mut VM) {
 }
 
 fn sext(val: u16, bits: u8) -> u16 {
+  // sign extension
   if (val >> (bits - 1)) & 1 == 1 {
     val | (0xffff << bits)
   } else {
@@ -90,5 +91,90 @@ fn add(instr: u16, vm: &mut VM) {
     vm.registers.update_reg_and_cond(dr, res);
   }
 }
+
+fn and(instr: u16, vm: &mut VM) {
+  let dr = (instr >> 9) & 0b111;
+  let sr1 = (instr >> 6) & 0b111;
+  if (instr >> 5 & 1) == 0 {
+    let sr2: u16 = instr & 0b111;
+    let res: u16 = vm.registers.get_register(sr1) & vm.registers.get_register(sr2);
+    vm.registers.update_reg_and_cond(dr, res);
+  } else {
+    let imm5: u16 = instr & 0b11111;
+    let res: u16 = vm.registers.get_register(sr1) & sext(imm5, 5);
+    vm.registers.update_reg_and_cond(dr, res);
+  }
+}
+
+fn br(instr: u16, vm: &mut VM) {
+  // branch
+  let sext_pcoffset9: u16 = sext(instr & 0b111111111, 9);
+  let instr_cond: u16 = (instr >> 9) & 0b111;
+  if (instr_cond & vm.registers.pc != 0) || (instr_cond == 0b111) {
+    vm.registers.pc = vm.registers.pc.wrapping_add(sext_pcoffset9);
+  }
+}
+
+fn jmp(instr: u16, vm: &mut VM) {
+  // ret is a special form of jmp where it jut loads the 7th register into pc
+  let reg: u16 = (instr >> 6) & 0b111;
+  vm.registers.pc = vm.registers.get_register(reg);
+}
+
+fn jsr(instr: u16, vm: &mut VM) {
+  // jump to subrouting
+  // jsr includes it's bigger brother jsr
+  vm.registers.set_registers(7, vm.registers.pc);
+  if ((instr >> 10) & 1 == 0) {
+    let baser: u16 = (instr >> 6) & 0b111;
+    vm.registers.pc = vm.registers.get_register(baser);
+  } else {
+    let pcoffset11: u16 = sext(instr & 0b1111111111, 11);
+    vm.registers.pc = vm.registers.pc.wrapping_add(pcoffset11);
+  }
+}
+
+fn ld(instr: u16, vm: &mut VM) {
+  let dr: u16 = (instr >> 9) & 0b111;
+  let pcoffset9: u16 = instr & 0b11111111;
+  let addr: u16 = vm.registers.pc.wrapping_add(sext(pcoffset9, 9));
+  vm.registers.update_reg_and_cond(dr, vm.memory.get(addr));
+}
+
+fn ldi(instr: u16, vm: &mut VM) {
+  // load indirect -> take a value of an address in memory and then set the register with that address value in memory
+  let dr: u16 = (instr >> 9) & 0b111;
+  let pcoffset9: u16 = instr & 0b11111111;
+  let addr: u16 = vm.memory.get(vm.registers.pc.wrapping_add(sext(pcoffset9, 9)));
+  vm.registers.update_reg_and_cond(dr, vm.memory.get(addr));
+}
+
+fn ldr(instr: u16, vm: &mut VM) {
+  // load base and offset
+  let soffset6: u16 = sext(instr & 0b111111, 6);
+  let br: u16 = instr >> 6 & 0b111;
+  let dr: u16 = (instr >> 9) & 0b111;
+  let addr: u16 = vm.registers.get_register(br).wrapping_add(soffset6);
+  vm.registers.update_reg_and_cond(dr, vm.memory.get(addr));
+}
+
+fn lea(instr: u16, vm: &mut VM) {
+  let spcoffset9: u16 = sext(instr & 0b111111111, 9);
+  let dr: u16 = (instr >> 9) & 0b111;
+  // load effective address
+  vm.registers.set_registers(dr, vm.registers.pc.wrapping_add(spcoffset9));
+}
+
+fn not(instr: u16, vm: &mut VM) {
+  let dr: u16 = (instr >> 9) & 0b111;
+  let sr: u16 = (instr >> 6) & 0b111;
+  let val: u16 = !vm.registers.get_register(sr);
+  vm.registers.update_reg_and_cond(dr, val);
+}
+
+
+
+
+
 
 
