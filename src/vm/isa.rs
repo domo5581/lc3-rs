@@ -63,6 +63,8 @@ pub fn execute_opcode(vm: &mut VM) {
     Opcode::STI => noop(instr, vm),
     Opcode::STR => noop(instr, vm),
     Opcode::TRAP => noop(instr, vm),
+    Opcode::RTI => unimplemented!("RTI - privilege violation"),
+    Opcode::RES => unimplemented!("RES - illegal instruction"),
     _ => {}
   }
 }
@@ -125,7 +127,7 @@ fn jsr(instr: u16, vm: &mut VM) {
   // jump to subrouting
   // jsr includes it's bigger brother jsr
   vm.registers.set_registers(7, vm.registers.pc);
-  if ((instr >> 10) & 1 == 0) {
+  if (instr >> 10) & 1 == 0 {
     let baser: u16 = (instr >> 6) & 0b111;
     vm.registers.pc = vm.registers.get_register(baser);
   } else {
@@ -170,6 +172,28 @@ fn not(instr: u16, vm: &mut VM) {
   let sr: u16 = (instr >> 6) & 0b111;
   let val: u16 = !vm.registers.get_register(sr);
   vm.registers.update_reg_and_cond(dr, val);
+}
+
+fn st(instr: u16, vm: &mut VM) {
+  // store
+  let spcoffset9: u16 = sext(instr & 0b111111111, 9);
+  let sr: u16 = instr >> 9 & 0b111;
+  vm.memory.set(vm.registers.pc.wrapping_add(spcoffset9), sr);
+}
+
+fn sti(instr: u16, vm: &mut VM) {
+  // store indirect
+  let spcoffset9: u16 = sext(instr & 0b111111111, 9);
+  let sr: u16 = instr >> 9 & 0b111;
+  let addr: u16 = vm.memory.get(vm.registers.pc.wrapping_add(spcoffset9));
+  vm.memory.set(addr, vm.registers.get_register(sr));
+}
+
+fn str(instr: u16, vm: &mut VM) {
+  let sr: u16 = instr >> 9 & 0b111;
+  let baser: u16 = instr >> 6 & 0b111;
+  let offset6: u16 = instr & 0b111111;
+  vm.memory.set(baser + sext(offset6, 6), vm.registers.get_register(sr));
 }
 
 

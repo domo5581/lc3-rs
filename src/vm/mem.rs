@@ -32,17 +32,17 @@ impl Memory {
 		loop {
 		  match reader.read_exact(&mut buffer) {
 		    Ok(()) => {
-					let instruction = u16::from_be_bytes(buffer);
-					self.set(addr, instruction as u16);
-					addr += 1;
+				let instruction = u16::from_be_bytes(buffer);
+				self.set(addr, instruction as u16);
+				addr += 1;
+			}
+			Err(e) => {
+				if e.kind() == std::io::ErrorKind::UnexpectedEof {
+					break;
+				} else {
+					panic!("could not read instruction {:?}", e);
 				}
-				Err(e) => {
-					if e.kind() == std::io::ErrorKind::UnexpectedEof {
-						break;
-					} else {
-						panic!("could not read instruction {:?}", e);
-					}
-				}
+			}
 		  }
 		}
 	}
