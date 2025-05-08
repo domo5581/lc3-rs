@@ -196,6 +196,32 @@ fn str(instr: u16, vm: &mut VM) {
   vm.memory.set(baser + sext(offset6, 6), vm.registers.get_register(sr));
 }
 
+fn trap(instr: u16, vm: &mut VM) {
+  vm.registers.set_registers(7, vm.registers.pc);
+  match instr & 0xFF {
+    0x20 => {
+      // getc -> gets a character from the keyboard WITHOUT echoing to the console
+      // character copied into r0, high 8 of r0 is cleared 
+      
+    },
+    0x21 => {
+      // writes the character stored in r0 into the terminal
+    },
+    0x22 => {
+      // puts -> write a string of characters starting with the address specificed in r0 and then terminating when it hits a 0x000 in memory
+    },
+    0x23 => {
+      // print a prompt to the screen, read a single character from the keyboard. char IS echoed into the console and it's ascii is copied itno r0. 
+    },
+    0x24 => {
+
+    },
+    0x25 => {
+
+    },
+    _ => todo!()
+  }
+}
 
 
 
