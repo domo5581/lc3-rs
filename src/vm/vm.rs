@@ -88,6 +88,7 @@ impl Registers {
 pub struct VM {
 	 pub memory: Memory,
 	 pub registers: Registers,
+	 pub running: bool, // is the vm running or not?
 }
 
 impl VM {
@@ -95,6 +96,7 @@ impl VM {
 		VM{
 			memory: Memory::new(),
 			registers: Registers::new(),
+			running: true,
 		}
 	}
 }

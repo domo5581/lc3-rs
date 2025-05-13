@@ -2,6 +2,8 @@
 #![allow(unused_variables)]
 
 use crate::vm::vm::VM;
+use std::io;
+
 
 enum Opcode {
   BR = 0,
@@ -54,15 +56,15 @@ pub fn execute_opcode(vm: &mut VM) {
     Opcode::NOT => noop(instr, vm),
     Opcode::BR => br(instr, vm),
     Opcode::JMP => jmp(instr, vm),
-  	Opcode::JSR => noop(instr, vm),
-    Opcode::LD => noop(instr, vm),
-    Opcode::LDI => noop(instr, vm),
-    Opcode::LDR => noop(instr, vm),
-    Opcode::LEA => noop(instr, vm),
-    Opcode::ST => noop(instr, vm),
-    Opcode::STI => noop(instr, vm),
-    Opcode::STR => noop(instr, vm),
-    Opcode::TRAP => noop(instr, vm),
+  	Opcode::JSR => jsr(instr, vm),
+    Opcode::LD => ld(instr, vm),
+    Opcode::LDI => ldi(instr, vm),
+    Opcode::LDR => ldr(instr, vm),
+    Opcode::LEA => lea(instr, vm),
+    Opcode::ST => st(instr, vm),
+    Opcode::STI => sti(instr, vm),
+    Opcode::STR => str(instr, vm),
+    Opcode::TRAP => trap(instr, vm),
     Opcode::RTI => unimplemented!("RTI - privilege violation"),
     Opcode::RES => unimplemented!("RES - illegal instruction"),
     _ => {}
@@ -202,7 +204,6 @@ fn trap(instr: u16, vm: &mut VM) {
     0x20 => {
       // getc -> gets a character from the keyboard WITHOUT echoing to the console
       // character copied into r0, high 8 of r0 is cleared 
-      
     },
     0x21 => {
       // writes the character stored in r0 into the terminal
@@ -219,7 +220,7 @@ fn trap(instr: u16, vm: &mut VM) {
     0x25 => {
 
     },
-    _ => todo!()
+    _ => unimplemented!()
   }
 }
 
