@@ -1,6 +1,13 @@
-use std::{fs, io::{self, Read}};
+use core::panic;
+use std::{fs, io::{self, Read}, time::Duration};
+use crossterm::event::{poll, read, Event, KeyEvent, KeyCode};
 
 pub const MEM_SIZE: usize = u16::MAX as usize;
+
+pub enum KeyboardMappedReg {
+	Kbsr = 0xFE00,
+	Kbdr = 0xFE02,
+}
 
 pub struct Memory {
 	pub data: [u16; MEM_SIZE],
@@ -13,10 +20,37 @@ impl Memory {
 		}  
 	}
 	pub fn set(&mut self, addr: u16, value: u16) {
+		if addr as usize >= MEM_SIZE {
+			panic!("attemped to write to/past max memory address!");
+		}
 		self.data[addr as usize] = value
 	}
 
+	fn keyboard_handler(&mut self) {
+		if poll(Duration::from_millis(0)).unwrap() {
+			if let Event::Key(KeyEvent{code, ..}) = read().unwrap() {
+				self.data[KeyboardMappedReg::Kbsr as usize] = 1 << 15;
+				if let KeyCode::Char(c) = code {
+					self.data[KeyboardMappedReg::Kbdr as usize] = c as u16;
+				} else {
+					self.data[KeyboardMappedReg::Kbdr as usize] = 0;
+				}
+			} else {
+				self.data[KeyboardMappedReg::Kbsr as usize] = 0;
+			}
+		}
+	}
+
 	pub fn get(&mut self, addr: u16) -> u16 {
+		match addr {
+			0xFE00 => {self.keyboard_handler();},
+			0xFE02 => {
+				self.keyboard_handler();
+				// clear kbsr ready after reading kbdr
+				self.data[KeyboardMappedReg::Kbsr as usize] = 0;
+			}
+			_ => {}
+		}
 		self.data[addr as usize]
 	}
 	

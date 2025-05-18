@@ -99,5 +99,9 @@ impl VM {
 			running: true,
 		}
 	}
+
+	pub fn state(&mut self, state: bool) {
+		self.running = state;
+	}
 }
 

@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::vm::vm::VM;
-use std::io;
+use std::io::{self, Write};
 
+use crate::vm::vm::VM;
 
 enum Opcode {
   BR = 0,
@@ -207,9 +207,22 @@ fn trap(instr: u16, vm: &mut VM) {
     },
     0x21 => {
       // writes the character stored in r0 into the terminal
+      let c = vm.registers.get_register(0) as u8 as char;
+      print!("{}", c);
+      let _ = io::stdout().flush();
     },
     0x22 => {
       // puts -> write a string of characters starting with the address specificed in r0 and then terminating when it hits a 0x000 in memory
+      let mut idx = vm.registers.get_register(0);
+      loop {
+          let char: char = vm.memory.get(idx) as u8 as char;
+          if char as u8 == 0x0000 {
+            break;
+          }
+          print!("{}", char);
+          idx += 1;
+      }
+      let _ = io::stdout().flush();
     },
     0x23 => {
       // print a prompt to the screen, read a single character from the keyboard. char IS echoed into the console and it's ascii is copied itno r0. 
@@ -218,7 +231,8 @@ fn trap(instr: u16, vm: &mut VM) {
 
     },
     0x25 => {
-
+      // halt
+      vm.state(false); // sets "running" state to false
     },
     _ => unimplemented!()
   }
