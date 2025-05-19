@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused)]
 
-use crate::vm::mem::*;
+use crate::vm::mem;
+use crate::vm::isa;
 
 const PC_START: u16 = 0x300;
 
@@ -86,7 +87,7 @@ impl Registers {
 
 
 pub struct VM {
-	 pub memory: Memory,
+	 pub memory: mem::Memory,
 	 pub registers: Registers,
 	 pub running: bool, // is the vm running or not?
 }
@@ -94,14 +95,27 @@ pub struct VM {
 impl VM {
 	 pub fn new() -> VM {
 		VM{
-			memory: Memory::new(),
+			memory: mem::Memory::new(),
 			registers: Registers::new(),
-			running: true,
+			running: false,
 		}
 	}
 
 	pub fn state(&mut self, state: bool) {
 		self.running = state;
+	}
+
+	pub fn execute(&mut self) {
+		self.running = true;
+		while (self.running) {
+			if self.registers.pc as usize == mem::MEM_SIZE - 1 {
+				self.running = false;
+				print!("{}", "vm has read past memory size")
+			} else {
+				self.registers.pc += 1;
+			}
+			isa::execute_opcode(self); // executes the opcode at the vm's pc
+		}
 	}
 }
 

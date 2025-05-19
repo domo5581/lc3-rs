@@ -2,7 +2,7 @@
 #![allow(unused_variables)]
 
 use std::io::{self, Write};
-
+use crossterm::event::{read, Event, KeyCode, KeyEvent};
 use crate::vm::vm::VM;
 
 enum Opcode {
@@ -204,6 +204,11 @@ fn trap(instr: u16, vm: &mut VM) {
     0x20 => {
       // getc -> gets a character from the keyboard WITHOUT echoing to the console
       // character copied into r0, high 8 of r0 is cleared 
+      let c = match read().unwrap() {
+        Event::Key(KeyEvent { code: KeyCode::Char(ch), .. }) => ch as u16 & 0x00FF,
+        _ => 0,
+      };
+      vm.registers.set_registers(0, c);
     },
     0x21 => {
       // writes the character stored in r0 into the terminal
@@ -225,10 +230,30 @@ fn trap(instr: u16, vm: &mut VM) {
       let _ = io::stdout().flush();
     },
     0x23 => {
-      // print a prompt to the screen, read a single character from the keyboard. char IS echoed into the console and it's ascii is copied itno r0. 
+      // print a prompt to the screen, read a single character from the keyboard. char IS echoed into the console and it's ascii is copied itno r0.
+      let c = match read().unwrap() {
+        Event::Key(KeyEvent { code: KeyCode::Char(ch), .. }) => ch as u16 & 0x00FF,
+        _ => 0,
+      };
+      vm.registers.set_registers(0, c);
+      print!("{}", c);
+      let _ = io::stdout().flush();
     },
     0x24 => {
-
+      // putsp (see isa manual)
+      let mut idx = vm.registers.get_register(0);
+      loop {
+        let val = vm.memory.get(idx);
+        if val as u8 == 0x0000 {
+          break;
+        }
+        print!("{}", (val & 0x00FF) as u8 as char);
+        if val >> 8 as u8 != 0 {
+          print!("{}", (val >> 8) as u8 as char )
+        }
+        idx += 1;
+      }
+      let _ = io::stdout().flush();
     },
     0x25 => {
       // halt
