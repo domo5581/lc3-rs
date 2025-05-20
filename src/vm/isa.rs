@@ -53,7 +53,7 @@ pub fn execute_opcode(vm: &mut VM) {
 	match opcode {
     Opcode::ADD => add(instr, vm),
     Opcode::AND => and(instr, vm),
-    Opcode::NOT => noop(instr, vm),
+    Opcode::NOT => not(instr, vm),
     Opcode::BR => br(instr, vm),
     Opcode::JMP => jmp(instr, vm),
   	Opcode::JSR => jsr(instr, vm),
@@ -114,7 +114,7 @@ fn br(instr: u16, vm: &mut VM) {
   // branch
   let sext_pcoffset9: u16 = sext(instr & 0b111111111, 9);
   let instr_cond: u16 = (instr >> 9) & 0b111;
-  if (instr_cond & vm.registers.pc != 0) || (instr_cond == 0b111) {
+  if (instr_cond & vm.registers.get_register(9) != 0) || (instr_cond == 0b111) {
     vm.registers.pc = vm.registers.pc.wrapping_add(sext_pcoffset9);
   }
 }
@@ -180,7 +180,7 @@ fn st(instr: u16, vm: &mut VM) {
   // store
   let spcoffset9: u16 = sext(instr & 0b111111111, 9);
   let sr: u16 = instr >> 9 & 0b111;
-  vm.memory.set(vm.registers.pc.wrapping_add(spcoffset9), sr);
+  vm.memory.set(vm.registers.pc.wrapping_add(spcoffset9), vm.registers.get_register(sr));
 }
 
 fn sti(instr: u16, vm: &mut VM) {
@@ -195,7 +195,8 @@ fn str(instr: u16, vm: &mut VM) {
   let sr: u16 = instr >> 9 & 0b111;
   let baser: u16 = instr >> 6 & 0b111;
   let offset6: u16 = instr & 0b111111;
-  vm.memory.set(baser + sext(offset6, 6), vm.registers.get_register(sr));
+  let base_val = vm.registers.get_register(baser);
+  vm.memory.set(base_val.wrapping_add(sext(offset6, 6)), vm.registers.get_register(sr));
 }
 
 fn trap(instr: u16, vm: &mut VM) {

@@ -108,13 +108,13 @@ impl VM {
 	pub fn execute(&mut self) {
 		self.running = true;
 		while (self.running) {
-			if self.registers.pc as usize == mem::MEM_SIZE - 1 {
+			if self.registers.pc as usize >= mem::MEM_SIZE - 1 {
 				self.running = false;
 				print!("{}", "vm has read past memory size")
 			} else {
+				isa::execute_opcode(self); // executes the opcode at the vm's pc
 				self.registers.pc += 1;
 			}
-			isa::execute_opcode(self); // executes the opcode at the vm's pc
 		}
 	}
 }
