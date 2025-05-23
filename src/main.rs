@@ -23,7 +23,8 @@ fn main() {
 	let mut lc3: VM = VM::new();
 	let args: Vec<String> = env::args().collect();
 	let path = args.get(1).expect("a file must be specified");
-	lc3.memory.read(path.to_string());
+	let initial_pc = lc3.memory.read(path.to_string());
+	lc3.registers.pc = initial_pc;
 	lc3.execute();
 	// restore term state
 	crossterm::terminal::disable_raw_mode().ok();

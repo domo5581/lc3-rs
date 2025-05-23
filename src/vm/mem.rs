@@ -54,7 +54,7 @@ impl Memory {
 		self.data[addr as usize]
 	}
 	
-	pub fn read(&mut self, path: String) {
+	pub fn read(&mut self, path: String) -> u16 {
 		// don't need byteorder crate!!
 		let file = fs::File::open(path).expect("could not open file");
 		let mut reader = io::BufReader::new(file);
@@ -79,5 +79,6 @@ impl Memory {
 			}
 		  }
 		}
+		base_addr
 	}
 }

@@ -129,7 +129,7 @@ fn jsr(instr: u16, vm: &mut VM) {
   // jump to subrouting
   // jsr includes it's bigger brother jsr
   vm.registers.set_registers(7, vm.registers.pc);
-  if (instr >> 10) & 1 == 0 {
+  if (instr >> 11) & 1 == 0 {
     let baser: u16 = (instr >> 6) & 0b111;
     vm.registers.pc = vm.registers.get_register(baser);
   } else {
@@ -140,7 +140,7 @@ fn jsr(instr: u16, vm: &mut VM) {
 
 fn ld(instr: u16, vm: &mut VM) {
   let dr: u16 = (instr >> 9) & 0b111;
-  let pcoffset9: u16 = instr & 0b11111111;
+  let pcoffset9: u16 = instr & 0b111111111;
   let addr: u16 = vm.registers.pc.wrapping_add(sext(pcoffset9, 9));
   vm.registers.update_reg_and_cond(dr, vm.memory.get(addr));
 }
@@ -148,7 +148,7 @@ fn ld(instr: u16, vm: &mut VM) {
 fn ldi(instr: u16, vm: &mut VM) {
   // load indirect -> take a value of an address in memory and then set the register with that address value in memory
   let dr: u16 = (instr >> 9) & 0b111;
-  let pcoffset9: u16 = instr & 0b11111111;
+  let pcoffset9: u16 = instr & 0b111111111;
   let addr: u16 = vm.memory.get(vm.registers.pc.wrapping_add(sext(pcoffset9, 9)));
   vm.registers.update_reg_and_cond(dr, vm.memory.get(addr));
 }
@@ -166,7 +166,7 @@ fn lea(instr: u16, vm: &mut VM) {
   let spcoffset9: u16 = sext(instr & 0b111111111, 9);
   let dr: u16 = (instr >> 9) & 0b111;
   // load effective address
-  vm.registers.set_registers(dr, vm.registers.pc.wrapping_add(spcoffset9));
+  vm.registers.update_reg_and_cond(dr, vm.registers.pc.wrapping_add(spcoffset9));
 }
 
 fn not(instr: u16, vm: &mut VM) {
@@ -201,15 +201,31 @@ fn str(instr: u16, vm: &mut VM) {
 
 fn trap(instr: u16, vm: &mut VM) {
   vm.registers.set_registers(7, vm.registers.pc);
+  let mut charval = 0;
   match instr & 0xFF {
     0x20 => {
-      // getc -> gets a character from the keyboard WITHOUT echoing to the console
-      // character copied into r0, high 8 of r0 is cleared 
-      let c = match read().unwrap() {
-        Event::Key(KeyEvent { code: KeyCode::Char(ch), .. }) => ch as u16 & 0x00FF,
-        _ => 0,
-      };
-      vm.registers.set_registers(0, c);
+      loop {
+        match read() {
+          Ok(Event::Key(KeyEvent { code: KeyCode::Char(ch), kind: crossterm::event::KeyEventKind::Press, .. })) => {
+            charval = (ch as u16) & 0x00FF;
+            break;
+          },
+          Ok(Event::Key(KeyEvent { code: KeyCode::Enter, kind: crossterm::event::KeyEventKind::Press, .. })) => {
+            charval = 0x0A;
+            break;
+          },
+          Ok(Event::Key(KeyEvent {kind: crossterm::event::KeyEventKind::Press, .. })) => {
+            continue;
+          },
+          Ok(_) => {
+            continue;
+          },
+          Err(_e) => {
+            break;
+          }
+        }
+      }
+      vm.registers.set_registers(0, charval);
     },
     0x21 => {
       // writes the character stored in r0 into the terminal
@@ -231,28 +247,47 @@ fn trap(instr: u16, vm: &mut VM) {
       let _ = io::stdout().flush();
     },
     0x23 => {
-      // print a prompt to the screen, read a single character from the keyboard. char IS echoed into the console and it's ascii is copied itno r0.
-      let c = match read().unwrap() {
-        Event::Key(KeyEvent { code: KeyCode::Char(ch), .. }) => ch as u16 & 0x00FF,
-        _ => 0,
-      };
-      vm.registers.set_registers(0, c);
-      print!("{}", c);
-      let _ = io::stdout().flush();
+      let mut charval: u16 = 0;
+      loop { 
+        match read() {
+          Ok(Event::Key(KeyEvent { code: KeyCode::Char(ch), kind: crossterm::event::KeyEventKind::Press, .. })) => {
+            charval = (ch as u16) & 0x00FF;
+            print!("{}", ch); // Echo the character
+            let _ = io::stdout().flush();
+            break;
+          },
+          Ok(Event::Key(KeyEvent { code: KeyCode::Enter, kind: crossterm::event::KeyEventKind::Press, .. })) => {
+            charval = 0x0A; // ASCII LF (newline)
+            print!("{}", 0x0A as char); // Echo newline
+            let _ = io::stdout().flush();
+            break;
+          },
+          Ok(Event::Key(KeyEvent {kind: crossterm::event::KeyEventKind::Press, .. })) => {continue;} 
+          Ok(_) => {continue;}
+          Err(_e) => {
+            break;
+          }
+        }
+      }
+      vm.registers.set_registers(0, charval);
     },
     0x24 => {
       // putsp (see isa manual)
       let mut idx = vm.registers.get_register(0);
       loop {
         let val = vm.memory.get(idx);
-        if val as u8 == 0x0000 {
+        let char1_byte = (val & 0x00FF) as u8;
+        if char1_byte as u8 == 0x00 {
           break;
         }
-        print!("{}", (val & 0x00FF) as u8 as char);
-        if val >> 8 as u8 != 0 {
-          print!("{}", (val >> 8) as u8 as char )
+        print!("{}", char1_byte as char);
+
+        let char2_byte = (val >> 8) as u8;
+        if char2_byte == 0x00 {
+          break;
         }
-        idx += 1;
+        print!("{}", char2_byte as char);
+        idx = idx.wrapping_add(1);
       }
       let _ = io::stdout().flush();
     },
@@ -263,10 +298,3 @@ fn trap(instr: u16, vm: &mut VM) {
     _ => unimplemented!()
   }
 }
-
-
-
-
-
-
-

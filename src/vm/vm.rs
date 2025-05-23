@@ -70,11 +70,11 @@ impl Registers {
 	}
 
 	pub fn update_cond(&mut self, num : u16) {
-		if *self.return_register(num) > 0 {
+		if self.get_register(num) > 0 {
 			self.cond = ConditionFlags::POS as u16;
-		} else if *self.return_register(num) == 0 {
+		} else if self.get_register(num) == 0 {
 			self.cond = ConditionFlags::ZERO as u16;
-		}	else {
+		} else {
 		  self.cond = ConditionFlags::NEG as u16
 		}
 	}
