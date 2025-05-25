@@ -2,7 +2,8 @@
 #![allow(unused_variables)]
 
 use std::io::{self, Write};
-use crossterm::event::{read, Event, KeyCode, KeyEvent};
+use std::time::Duration;
+use crossterm::event::{poll, read, Event, KeyCode};
 use crate::vm::vm::VM;
 
 enum Opcode {
@@ -199,102 +200,75 @@ fn str(instr: u16, vm: &mut VM) {
   vm.memory.set(base_val.wrapping_add(sext(offset6, 6)), vm.registers.get_register(sr));
 }
 
-fn trap(instr: u16, vm: &mut VM) {
-  vm.registers.set_registers(7, vm.registers.pc);
-  let mut charval = 0;
-  match instr & 0xFF {
-    0x20 => {
-      loop {
-        match read() {
-          Ok(Event::Key(KeyEvent { code: KeyCode::Char(ch), kind: crossterm::event::KeyEventKind::Press, .. })) => {
-            charval = (ch as u16) & 0x00FF;
-            break;
-          },
-          Ok(Event::Key(KeyEvent { code: KeyCode::Enter, kind: crossterm::event::KeyEventKind::Press, .. })) => {
-            charval = 0x0A;
-            break;
-          },
-          Ok(Event::Key(KeyEvent {kind: crossterm::event::KeyEventKind::Press, .. })) => {
-            continue;
-          },
-          Ok(_) => {
-            continue;
-          },
-          Err(_e) => {
-            break;
+fn get_char() -> u16 {
+  loop {
+    if poll(Duration::from_millis(16)).unwrap() {
+      if let Ok(Event::Key(key_event)) = read() {
+        if key_event.kind == crossterm::event::KeyEventKind::Press {
+          match key_event.code {
+            KeyCode::Char(ch) => return ch as u16,
+            // Keycode::Center => return 0x0A,
+            _ => continue,
           }
         }
       }
-      vm.registers.set_registers(0, charval);
+    }
+  }
+}
+
+
+fn trap(instr: u16, vm: &mut VM) {
+  vm.registers.set_registers(7, vm.registers.pc);
+  match instr & 0xFF {
+    0x20 => {
+      // get char without echo
+      let char = get_char();
+      vm.registers.set_registers(0, char);
     },
     0x21 => {
-      // writes the character stored in r0 into the terminal
-      let c = vm.registers.get_register(0) as u8 as char;
-      print!("{}", c);
+      // output char in r0
+      let char = vm.registers.get_register(0) as u8 as char;
+      print!("{}", char);
       let _ = io::stdout().flush();
     },
     0x22 => {
-      // puts -> write a string of characters starting with the address specificed in r0 and then terminating when it hits a 0x000 in memory
+      // output null terminated string starting @ r0
       let mut idx = vm.registers.get_register(0);
       loop {
-          let char: char = vm.memory.get(idx) as u8 as char;
-          if char as u8 == 0x0000 {
-            break;
-          }
-          print!("{}", char);
-          idx += 1;
+        let char = vm.memory.get(idx);
+        if char == 0x000 { break; }
+        print!("{}", char as u8 as char);
+        idx += 1;
       }
       let _ = io::stdout().flush();
     },
     0x23 => {
-      let mut charval: u16 = 0;
-      loop { 
-        match read() {
-          Ok(Event::Key(KeyEvent { code: KeyCode::Char(ch), kind: crossterm::event::KeyEventKind::Press, .. })) => {
-            charval = (ch as u16) & 0x00FF;
-            print!("{}", ch); // Echo the character
-            let _ = io::stdout().flush();
-            break;
-          },
-          Ok(Event::Key(KeyEvent { code: KeyCode::Enter, kind: crossterm::event::KeyEventKind::Press, .. })) => {
-            charval = 0x0A; // ASCII LF (newline)
-            print!("{}", 0x0A as char); // Echo newline
-            let _ = io::stdout().flush();
-            break;
-          },
-          Ok(Event::Key(KeyEvent {kind: crossterm::event::KeyEventKind::Press, .. })) => {continue;} 
-          Ok(_) => {continue;}
-          Err(_e) => {
-            break;
-          }
-        }
-      }
-      vm.registers.set_registers(0, charval);
+      // get character with echo
+      let char = get_char();
+      print!("{}", char as u8 as char);
+      let _ = io::stdout().flush();
+      vm.registers.set_registers(0, char);
     },
     0x24 => {
-      // putsp (see isa manual)
+      // putsp -> output packed string (see isa manual)
       let mut idx = vm.registers.get_register(0);
       loop {
-        let val = vm.memory.get(idx);
-        let char1_byte = (val & 0x00FF) as u8;
-        if char1_byte as u8 == 0x00 {
-          break;
-        }
-        print!("{}", char1_byte as char);
+        let packed_chars = vm.memory.get(idx);
+        let char1 = (packed_chars & 0xFF) as u8;
+        if char1 == 0 { break; }
+        print!("{}", char1 as char);
 
-        let char2_byte = (val >> 8) as u8;
-        if char2_byte == 0x00 {
-          break;
-        }
-        print!("{}", char2_byte as char);
-        idx = idx.wrapping_add(1);
+        let char2 = (packed_chars >> 8) as u8;
+        if char2 == 0 { break; }
+        print!("{}", char2 as char);
+
+        idx += 1;
       }
       let _ = io::stdout().flush();
     },
     0x25 => {
-      // halt
-      vm.state(false); // sets "running" state to false
+      vm.state(false);
     },
-    _ => unimplemented!()
+    _ => unimplemented!("not a trap vector?")
   }
 }
