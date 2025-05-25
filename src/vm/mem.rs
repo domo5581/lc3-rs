@@ -1,6 +1,6 @@
 use core::panic;
 use std::{fs, io::{self, Read}, time::Duration};
-use crossterm::event::{poll, read, Event, KeyEvent, KeyCode};
+use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyEventKind};
 
 pub const MEM_SIZE: usize = u16::MAX as usize;
 
@@ -11,12 +11,16 @@ pub enum KeyboardMappedReg {
 
 pub struct Memory {
 	pub data: [u16; MEM_SIZE],
+	keyboard_ready: bool,
+	keyboard_char: u16,
 }
 
 impl Memory {
 	pub fn new() -> Memory {
 	  Memory {
 			data: [0; MEM_SIZE], // empty array of zeros
+			keyboard_ready: false,
+			keyboard_char: 0,
 		}  
 	}
 	pub fn set(&mut self, addr: u16, value: u16) {
@@ -26,32 +30,50 @@ impl Memory {
 		self.data[addr as usize] = value
 	}
 
-	fn keyboard_handler(&mut self) {
-		if poll(Duration::from_millis(0)).unwrap() {
-			if let Event::Key(KeyEvent{code, ..}) = read().unwrap() {
-				self.data[KeyboardMappedReg::Kbsr as usize] = 1 << 15;
-				if let KeyCode::Char(c) = code {
-					self.data[KeyboardMappedReg::Kbdr as usize] = c as u16;
-				} else {
-					self.data[KeyboardMappedReg::Kbdr as usize] = 0;
+	fn check_keyboard(&mut self) {
+		if !self.keyboard_ready {
+			if poll(Duration::from_millis(0)).unwrap() {
+      			if let Ok(Event::Key(key_event)) = read() {
+        			if key_event.kind == crossterm::event::KeyEventKind::Press {
+						match key_event.code {
+							KeyCode::Char(c) => {
+								self.keyboard_char = c as u16;
+								self.keyboard_ready = true;
+							},
+							KeyCode::Backspace => {
+								self.keyboard_char = 0x08;
+								self.keyboard_ready = true;
+							},
+							_ => {}
+						}
+					}
 				}
-			} else {
-				self.data[KeyboardMappedReg::Kbsr as usize] = 0;
 			}
 		}
 	}
 
 	pub fn get(&mut self, addr: u16) -> u16 {
 		match addr {
-			0xFE00 => {self.keyboard_handler();}
+			0xFE00 => {
+				self.check_keyboard();
+				if self.keyboard_ready {
+					0x8000
+				} else {
+					0x0000
+				}
+			},
 			0xFE02 => {
-				self.keyboard_handler();
-				// clear kbsr ready after reading kbdr
-				self.data[KeyboardMappedReg::Kbsr as usize] = 0;
-			}
-			_ => {}
+				self.check_keyboard();
+				if self.keyboard_ready {
+					let ch = self.keyboard_char;
+					self.keyboard_ready = false;
+					ch
+				} else {
+					0
+				}
+			},
+			_ => self.data[addr as usize]
 		}
-		self.data[addr as usize]
 	}
 	
 	pub fn read(&mut self, path: String) -> u16 {
