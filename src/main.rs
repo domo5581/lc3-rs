@@ -36,5 +36,6 @@ fn main() {
 	lc3.registers.pc = initial_pc;
 	lc3.execute();
 	// restore term state
+	println!();
 	crossterm::terminal::disable_raw_mode().ok();
 }

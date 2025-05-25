@@ -43,7 +43,7 @@ impl Memory {
 
 	pub fn get(&mut self, addr: u16) -> u16 {
 		match addr {
-			0xFE00 => {self.keyboard_handler();},
+			0xFE00 => {self.keyboard_handler();}
 			0xFE02 => {
 				self.keyboard_handler();
 				// clear kbsr ready after reading kbdr
@@ -58,7 +58,7 @@ impl Memory {
 		// don't need byteorder crate!!
 		let file = fs::File::open(path).expect("could not open file");
 		let mut reader = io::BufReader::new(file);
-		let mut buffer: [u8;2] = [0, 2];
+		let mut buffer: [u8;2] = [0; 2];
 		// code to read the base address (first word of the obj file)
 		let _ = reader.read_exact(&mut buffer).expect("could not read file");
 		let base_addr = u16::from_be_bytes(buffer);
