@@ -4,5 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-crossterm = "0.29.0"
-ctrlc = "3.4.7"
+console = "0.16.0"

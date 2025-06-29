@@ -91,6 +91,7 @@ pub struct VM {
 	 pub memory: mem::Memory,
 	 pub registers: Registers,
 	 pub running: bool, // is the vm running or not?
+	 pub term: console::Term // makes it easier to interact with the terminal
 }
 
 impl VM {
@@ -99,6 +100,7 @@ impl VM {
 			memory: mem::Memory::new(),
 			registers: Registers::new(),
 			running: false,
+			term: console::Term::stdout(),
 		}
 	}
 
@@ -113,8 +115,9 @@ impl VM {
 				self.running = false;
 				print!("{}", "vm has read past memory size")
 			} else {
-				isa::execute_opcode(self); // executes the opcode at the vm's pc
+				let instr = self.memory.get(self.registers.pc, &self.term);
 				self.registers.pc += 1;
+				isa::execute_opcode(self, instr); // executes the opcode at the vm's pc
 			}
 		}
 	}
