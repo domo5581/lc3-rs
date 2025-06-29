@@ -1,10 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::io::{self, Write};
-use std::time::Duration;
-use crossterm::event::{poll, read, Event, KeyCode};
 use crate::vm::vm::VM;
+use std::io::{self, Write};
 
 enum Opcode {
   BR = 0,
@@ -200,39 +198,22 @@ fn str(instr: u16, vm: &mut VM) {
   vm.memory.set(base_val.wrapping_add(sext(offset6, 6)), vm.registers.get_register(sr));
 }
 
-fn get_char() -> u16 {
-  loop {
-    if poll(Duration::from_millis(16)).unwrap() {
-      if let Ok(Event::Key(key_event)) = read() {
-        if key_event.kind == crossterm::event::KeyEventKind::Press {
-          match key_event.code {
-            KeyCode::Char(ch) => return ch as u16,
-            // Keycode::Center => return 0x0A,
-            _ => continue,
-          }
-        }
-      }
-    }
-  }
-}
-
-
 fn trap(instr: u16, vm: &mut VM) {
   vm.registers.set_registers(7, vm.registers.pc);
   match instr & 0xFF {
     0x20 => {
       // get char without echo
-      let char = get_char();
-      vm.registers.set_registers(0, char);
+      let ch = vm.term.read_char().unwrap_or('\0');
+      if ch.is_ascii() {
+        vm.registers.set_registers(0, ch as u16 & 0xFF);
+      }
     },
     0x21 => {
-      // output char in r0
       let char = vm.registers.get_register(0) as u8 as char;
       print!("{}", char);
       let _ = io::stdout().flush();
     },
     0x22 => {
-      // output null terminated string starting @ r0
       let mut idx = vm.registers.get_register(0);
       loop {
         let char = vm.memory.get(idx);
@@ -243,14 +224,13 @@ fn trap(instr: u16, vm: &mut VM) {
       let _ = io::stdout().flush();
     },
     0x23 => {
-      // get character with echo
-      let char = get_char();
-      print!("{}", char as u8 as char);
-      let _ = io::stdout().flush();
-      vm.registers.set_registers(0, char);
+      let ch = vm.term.read_char().unwrap_or('\0');
+      if ch.is_ascii() {
+        vm.registers.set_registers(0, ch as u16 & 0xFF);
+      }
+      print!("{}", ch);
     },
     0x24 => {
-      // putsp -> output packed string (see isa manual)
       let mut idx = vm.registers.get_register(0);
       loop {
         let packed_chars = vm.memory.get(idx);

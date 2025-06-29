@@ -91,6 +91,7 @@ pub struct VM {
 	 pub memory: mem::Memory,
 	 pub registers: Registers,
 	 pub running: bool, // is the vm running or not?
+	 pub term: console::Term // makes it easier to interact with the terminal
 }
 
 impl VM {
@@ -99,6 +100,7 @@ impl VM {
 			memory: mem::Memory::new(),
 			registers: Registers::new(),
 			running: false,
+			term: console::Term::stdout(),
 		}
 	}
 
