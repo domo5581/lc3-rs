@@ -1,0 +1,13 @@
+lc3-rs
+a little computer 3 virtual machine and assembler written in rust. the only depedency used is the "console" crate.
+
+[virtual machine]
+how to use?
+1) git clone https://github.com/domo5581/lc3-rs.git
+2) cd lc3-rs
+3) cargo run [obj file here]
+
+the program comes with 2 demo programs: helloworld.obj and 2048.obj. hello world prints hello world to the terminal, and 2048 allows you to play the 2048 game using the WASD keys.
+
+[assembler]
+todo!
