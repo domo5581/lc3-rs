@@ -46,8 +46,7 @@ fn get_opcode(instr: u16) -> Opcode {
 	}
 }
 
-pub fn execute_opcode(vm: &mut VM) {
-	let instr = vm.memory.get(vm.registers.pc);
+pub fn execute_opcode(vm: &mut VM, instr: u16) {
 	let opcode = get_opcode(instr);
 	match opcode {
     Opcode::ADD => add(instr, vm),
@@ -141,15 +140,15 @@ fn ld(instr: u16, vm: &mut VM) {
   let dr: u16 = (instr >> 9) & 0b111;
   let pcoffset9: u16 = instr & 0b111111111;
   let addr: u16 = vm.registers.pc.wrapping_add(sext(pcoffset9, 9));
-  vm.registers.update_reg_and_cond(dr, vm.memory.get(addr));
+  vm.registers.update_reg_and_cond(dr, vm.memory.get(addr, &vm.term));
 }
 
 fn ldi(instr: u16, vm: &mut VM) {
   // load indirect -> take a value of an address in memory and then set the register with that address value in memory
   let dr: u16 = (instr >> 9) & 0b111;
   let pcoffset9: u16 = instr & 0b111111111;
-  let addr: u16 = vm.memory.get(vm.registers.pc.wrapping_add(sext(pcoffset9, 9)));
-  vm.registers.update_reg_and_cond(dr, vm.memory.get(addr));
+  let addr: u16 = vm.memory.get(vm.registers.pc.wrapping_add(sext(pcoffset9, 9)), &vm.term);
+  vm.registers.update_reg_and_cond(dr, vm.memory.get(addr, &vm.term));
 }
 
 fn ldr(instr: u16, vm: &mut VM) {
@@ -158,7 +157,7 @@ fn ldr(instr: u16, vm: &mut VM) {
   let br: u16 = instr >> 6 & 0b111;
   let dr: u16 = (instr >> 9) & 0b111;
   let addr: u16 = vm.registers.get_register(br).wrapping_add(soffset6);
-  vm.registers.update_reg_and_cond(dr, vm.memory.get(addr));
+  vm.registers.update_reg_and_cond(dr, vm.memory.get(addr, &vm.term));
 }
 
 fn lea(instr: u16, vm: &mut VM) {
@@ -186,7 +185,7 @@ fn sti(instr: u16, vm: &mut VM) {
   // store indirect
   let spcoffset9: u16 = sext(instr & 0b111111111, 9);
   let sr: u16 = instr >> 9 & 0b111;
-  let addr: u16 = vm.memory.get(vm.registers.pc.wrapping_add(spcoffset9));
+  let addr: u16 = vm.memory.get(vm.registers.pc.wrapping_add(spcoffset9), &vm.term);
   vm.memory.set(addr, vm.registers.get_register(sr));
 }
 
@@ -216,7 +215,7 @@ fn trap(instr: u16, vm: &mut VM) {
     0x22 => {
       let mut idx = vm.registers.get_register(0);
       loop {
-        let char = vm.memory.get(idx);
+        let char = vm.memory.get(idx, &vm.term);
         if char == 0x000 { break; }
         print!("{}", char as u8 as char);
         idx += 1;
@@ -233,7 +232,7 @@ fn trap(instr: u16, vm: &mut VM) {
     0x24 => {
       let mut idx = vm.registers.get_register(0);
       loop {
-        let packed_chars = vm.memory.get(idx);
+        let packed_chars = vm.memory.get(idx, &vm.term);
         let char1 = (packed_chars & 0xFF) as u8;
         if char1 == 0 { break; }
         print!("{}", char1 as char);

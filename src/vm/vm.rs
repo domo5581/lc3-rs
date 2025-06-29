@@ -115,8 +115,9 @@ impl VM {
 				self.running = false;
 				print!("{}", "vm has read past memory size")
 			} else {
-				isa::execute_opcode(self); // executes the opcode at the vm's pc
+				let instr = self.memory.get(self.registers.pc, &self.term);
 				self.registers.pc += 1;
+				isa::execute_opcode(self, instr); // executes the opcode at the vm's pc
 			}
 		}
 	}

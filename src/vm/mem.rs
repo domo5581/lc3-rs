@@ -1,7 +1,9 @@
 use core::panic;
+use console::Term;
 use std::{fs, io::{self, Read}};
 
 pub const MEM_SIZE: usize = u16::MAX as usize;
+
 
 pub enum MemMapReg {
 	Kbsr = 0xFE00,
@@ -25,20 +27,18 @@ impl Memory {
 		self.data[addr as usize] = value
 	}
 
-	fn handle_keyboard(&mut self) {
-		let mut buffer = [0; 1];
-    	std::io::stdin().read_exact(&mut buffer).unwrap();
-    	if buffer[0] != 0 {
-        	self.set(MemMapReg::Kbsr as u16, 1 << 15);
-        	self.set(MemMapReg::Kbdr as u16, buffer[0] as u16);
-    	} else {
-        	self.set(MemMapReg::Kbsr as u16, 0)
-    	}
+	fn handle_keyboard(&mut self, term: &Term) {
+		if let Ok(character) = term.read_char() {
+			self.set(MemMapReg::Kbsr as u16, 1 << 15);
+			self.set(MemMapReg::Kbdr as u16, character as u16);
+		} else {
+			self.set(MemMapReg::Kbsr as u16, 0);
+		}
 	}
 
-	pub fn get(&mut self, addr: u16) -> u16 {
+	pub fn get(&mut self, addr: u16, term: &Term) -> u16 {
 		if addr == MemMapReg::Kbsr as u16 {
-			self.handle_keyboard();
+			self.handle_keyboard(term);
 		}
 		self.data[addr as usize]
 	}
