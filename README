@@ -1,5 +1,5 @@
 lc3-rs
-a little computer 3 virtual machine and assembler written in rust. the only depedency used is the "console" crate.
+a little computer 3 virtual machine and assembler written in pure rust. the only external crate used is "console" (https://crates.io/crates/console) and it's required dependencies. originally meant to be a computer architeture learning excercise.
 
 [virtual machine]
 how to use?
