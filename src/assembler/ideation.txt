@@ -1,4 +1,0 @@
-parse .asm file and organize into tokens. tokens then stored into an ast
-
-
-ast should have space every new line to seperate instructions?
