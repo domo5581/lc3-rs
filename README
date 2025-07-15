@@ -8,6 +8,3 @@ how to use?
 3) cargo run [obj file here]
 
 the program comes with 2 demo programs: helloworld.obj and 2048.obj. hello world prints hello world to the terminal, and 2048 allows you to play the 2048 game using the WASD keys.
-
-[assembler]
-todo!
